@@ -97,7 +97,7 @@ CORE: dict[str, dict] = {
                     "region_name": "所属大区，如 华东/华北/华南"},
     },
     "dim_city": {
-        "comment": "城市维表（主键为电话区号形式的城市编码）",
+        "comment": "城市维表，主键为电话区号形式的城市编码",
         "ddl": """CREATE TABLE dim_city (
             city_code TEXT PRIMARY KEY,
             city_name TEXT NOT NULL,
@@ -184,7 +184,7 @@ CORE: dict[str, dict] = {
                     "channel": "销售渠道：app/h5/pc"},
     },
     "customer_segment": {
-        "comment": "客户分群定义表（只能经 customer_tag 关联到用户）",
+        "comment": "客户分群定义表，只能经 customer_tag 关联到用户",
         "ddl": """CREATE TABLE customer_segment (
             segment_id TEXT PRIMARY KEY,
             segment_name TEXT NOT NULL,
@@ -194,7 +194,7 @@ CORE: dict[str, dict] = {
                     "description": "分群定义说明"},
     },
     "customer_tag": {
-        "comment": "客户标签表（用户与客户分群之间的桥接表）",
+        "comment": "客户标签表，用于桥接用户与客户分群",
         "ddl": """CREATE TABLE customer_tag (
             tag_id INTEGER PRIMARY KEY,
             user_id INTEGER NOT NULL REFERENCES users(user_id),
