@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# 本地密钥与配置
+.env
+.claude/settings.local.json
+
+# 生成产物：演示库、索引、模型缓存
+data/*.sqlite
+data/*.duckdb
+data/index/
+models/

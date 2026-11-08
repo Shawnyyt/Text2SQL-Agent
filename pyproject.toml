@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text2sql"
+version = "0.1.0"
+description = "基于 LangGraph 双 Agent 协同的企业级 Text2SQL 查询引擎"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=3.46",
+    "httpx2>=2.12",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
