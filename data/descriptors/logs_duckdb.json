@@ -1,0 +1,19 @@
+{
+  "db_id": "logs_duckdb",
+  "engine": "DuckDB",
+  "dialect": "duckdb",
+  "path": "data/logs.duckdb",
+  "schema_file": "data/schema/logs_duckdb.json",
+  "domain": "APP 埋点日志与页面转化分析：曝光、点击、下单事件，页面维度，设备与日期分区",
+  "special_rules": [
+    "日期截断使用 CAST(event_time AS DATE) 或 date_trunc('day', event_time)",
+    "计算转化率等比率时必须 CAST(... AS DOUBLE)，否则会得到整数除法",
+    "分页使用 LIMIT n OFFSET m",
+    "字符串拼接使用 || 运算符",
+    "支持 QUALIFY 过滤窗口函数结果，但为保证可移植性优先使用子查询"
+  ],
+  "tables": [
+    "app_event",
+    "dim_page"
+  ]
+}

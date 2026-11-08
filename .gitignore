@@ -13,4 +13,5 @@ __pycache__/
 data/*.sqlite
 data/*.duckdb
 data/index/
+data/schema/
 models/

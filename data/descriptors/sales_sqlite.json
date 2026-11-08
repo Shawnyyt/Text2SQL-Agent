@@ -1,0 +1,27 @@
+{
+  "db_id": "sales_sqlite",
+  "engine": "SQLite",
+  "dialect": "sqlite",
+  "path": "data/sales.sqlite",
+  "schema_file": "data/schema/sales_sqlite.json",
+  "domain": "电商销售与用户运营：订单、销售流水、商品、地区、城市、用户资产、登录活跃、会员与客户分群",
+  "special_rules": [
+    "日期取年月使用 strftime('%Y-%m', create_time)；取日期部分使用 date(create_time)",
+    "字符串拼接使用 || 运算符",
+    "分页使用 LIMIT n OFFSET m",
+    "金额字段为 REAL，聚合后可用 ROUND(x, 2) 保留两位小数",
+    "大部分表有 is_del 软删除标记，统计有效数据时必须带 is_del = 0",
+    "城市在库中以编码存储（如 021=上海），不要写 city_name = '上海' 去关联 dim_city"
+  ],
+  "tables": [
+    "dim_region",
+    "dim_city",
+    "users",
+    "user_login",
+    "dim_product",
+    "orders",
+    "sales_record",
+    "customer_segment",
+    "customer_tag"
+  ]
+}
