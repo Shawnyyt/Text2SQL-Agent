@@ -102,3 +102,63 @@ def test_duckdb_timeout(tmp_path: Path):
     sql = "SELECT count(*) FROM range(1000000000000) t(i)"
     r = Sandbox(path, "duckdb", timeout=0.3).execute(sql)
     assert not r.ok and "超时" in r.error
+
+
+# ---- 函数黑名单 / 路径拦截 / 表名白名单（本轮加固）----
+
+@pytest.mark.parametrize("sql", [
+    "SELECT * FROM read_csv_auto('pyproject.toml')",
+    "SELECT * FROM read_parquet('x.parquet')",
+    "SELECT read_text('pyproject.toml')",
+    "SELECT * FROM glob('*')",
+    "SELECT http_get('http://example.com')",
+])
+def test_file_and_network_functions_are_denied(sql):
+    with pytest.raises(UnsafeQueryError, match="禁止使用函数"):
+        check_sql(sql, "duckdb")
+
+
+def test_sqlite_dangerous_functions_are_denied():
+    with pytest.raises(UnsafeQueryError, match="禁止使用函数"):
+        check_sql("SELECT load_extension('evil')", "sqlite")
+
+
+@pytest.mark.parametrize("sql", [
+    "SELECT * FROM 'C:/Windows/win.ini'",
+    "SELECT * FROM 'data/sales.csv'",
+    "SELECT * FROM 'logs.duckdb'",
+])
+def test_file_paths_as_tables_are_denied(sql):
+    with pytest.raises(UnsafeQueryError, match="文件路径"):
+        check_sql(sql, "duckdb")
+
+
+def test_legitimate_functions_still_pass():
+    check_sql("SELECT strftime('%Y-%m', t), julianday(a) - julianday(b) FROM x", "sqlite")
+    check_sql("SELECT date_trunc('month', ts), CAST(x AS DOUBLE), "
+              "SUM(CASE WHEN x > 0 THEN 1 ELSE 0 END) FROM y", "duckdb")
+
+
+def test_allowed_tables_whitelist():
+    check_sql("SELECT * FROM users", "sqlite", allowed_tables={"users"})
+    with pytest.raises(UnsafeQueryError, match="未知表: nope"):
+        check_sql("SELECT * FROM nope", "sqlite", allowed_tables={"users"})
+    # CTE 名不是物理表，不应误报
+    check_sql("WITH t AS (SELECT 1) SELECT * FROM t", "sqlite",
+              allowed_tables={"users"})
+
+
+def test_sandbox_reports_unknown_table_early(shop):
+    box = Sandbox(shop, "sqlite", allowed_tables={"users"})
+    assert box.execute("SELECT count(*) FROM users").ok
+    r = box.execute("SELECT * FROM secret_table")
+    assert not r.ok and "未知表" in r.error
+
+
+def test_duckdb_external_access_is_disabled(tmp_path):
+    path = tmp_path / "x.duckdb"
+    duckdb.connect(str(path)).close()
+    r = Sandbox(path, "duckdb").execute(
+        "SELECT value FROM duckdb_settings() "
+        "WHERE name = 'enable_external_access'")
+    assert r.ok and str(r.rows[0][0]).lower() == "false"
