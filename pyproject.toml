@@ -13,6 +13,7 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "duckdb>=1.1",
+    "sqlglot>=25",
 ]
 
 [project.optional-dependencies]
