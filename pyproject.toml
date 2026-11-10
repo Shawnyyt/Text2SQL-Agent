@@ -14,10 +14,14 @@ dependencies = [
     "pydantic-settings>=2.3",
     "duckdb>=1.1",
     "sqlglot>=25",
+    "numpy>=1.26",
+    "jieba>=0.42",
+    "rank-bm25>=0.2",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+local-embedding = ["sentence-transformers>=3", "faiss-cpu>=1.8"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

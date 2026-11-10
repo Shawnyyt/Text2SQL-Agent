@@ -39,6 +39,15 @@ class Settings(BaseSettings):
     coder_base_url: str | None = None
     coder_api_key: str | None = None
 
+    # ---- 向量检索 ----
+    embedding_backend: str = "bge"  # bge=本地 BGE-M3；api=OpenAI 兼容 embeddings
+    embedding_model: str = "BAAI/bge-m3"
+    embedding_device: str = "auto"  # auto / cuda / cpu
+    embedding_max_length: int = 512
+    embedding_api_model: str = "text-embedding-v3"
+    embedding_api_base_url: str | None = None
+    embedding_api_key: str | None = None
+
     # ---- 业务流程 ----
     # 首次生成之后最多修复几轮（共识 Q9：首次 + 最多 3 轮修复）
     max_repair_rounds: int = 3
