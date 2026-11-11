@@ -30,9 +30,9 @@
 | CP9 | Router + Analyzer 节点（LangGraph） | ✅ | 见 `git log` |
 | CP10 | Coder + Executor + Evaluator 节点 | ✅ | 见 `git log` |
 | CP11 | `graph.py` 完整条件边 + FakeLLM 整图测试 | ✅（并入 CP10 提交） |
-| CP12 | CLI、README、真实 API 端到端验证 | ⬜ | — |
+| CP12 | CLI、README | ✅（真实 API 端到端待配置模型） | 见 `git log` |
 
-测试现状：**103 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
+测试现状：**108 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
 
 ## 3. 快速开始
 
@@ -195,7 +195,7 @@ emb.encode(["文本"]).shape              # (n, dim)，已 L2 归一
 - **CP9 已完成**：`runtime.py`（依赖容器）、`nodes/router.py`、`nodes/analyzer.py`、`graph.py`（当前 Router → Analyzer → END，可编译运行）。检索参数已放入 Settings：`RETRIEVAL_TOP_TABLES` / `RETRIEVAL_COLS_PER_TABLE` / `RETRIEVAL_MAX_COLS` / `RETRIEVAL_BUSINESS_KB_TOP_K`。
 - **CP10**：Coder（3 候选并发）、Executor（调沙盒 + 未知列放宽 schema）、Evaluator（结果归一化、多数投票、LLM 判优）。
 - **CP11**：LangGraph 组装；FakeLLM 覆盖"首次成功 / 第 3 轮修复成功 / 全部失败"三条路径。
-- **CP12**：CLI（rich 展示每一步）、README、真实 API 端到端验证（报告生成、数据探查、指标归因等场景）。
+- **CP12 已完成**：`cli.py`（ask / build-index / ping）、`indexing.py`、README。**剩余**：在 `.env` 配置真实模型后做端到端验证（`text2sql ping` → `text2sql ask` 跑 5 个演示问题），必要时调 prompt。
 
 ## 11. 待决定事项
 
