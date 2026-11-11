@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     # ---- 业务流程 ----
     # 首次生成之后最多修复几轮（共识 Q9：首次 + 最多 3 轮修复）
     max_repair_rounds: int = 3
+    # 首轮并发生成的候选数（PDF：T=0.7 生成 3 条）
+    candidate_count: int = 3
     # prompt 中的“今天”；不填则取系统日期
     today: date | None = None
 

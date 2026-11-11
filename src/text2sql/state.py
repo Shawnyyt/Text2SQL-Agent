@@ -62,6 +62,10 @@ class Text2SQLState(TypedDict, total=False):
     attempts: Annotated[list[Attempt], operator.add]
     round: int                       # 当前已完成轮次；0 表示尚未生成
 
+    # ---- 重试 ----
+    last_error: str
+    last_failed_sql: str
+
     # ---- 收尾 ----
     final_sql: str
     final_candidate: Candidate

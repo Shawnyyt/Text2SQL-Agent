@@ -28,11 +28,11 @@
 | CP7 | 检索层：schema_retriever / value_index / business_kb / 路由索引 / build_index | ✅ | 见 `git log` |
 | CP8 | `state.py` + `prompts.py` | ✅ | 见 `git log` |
 | CP9 | Router + Analyzer 节点（LangGraph） | ✅ | 见 `git log` |
-| CP10 | Coder + Executor + Evaluator 节点 | ⬜ | — |
-| CP11 | `graph.py` + FakeLLM 整图测试 | ⬜ | — |
+| CP10 | Coder + Executor + Evaluator 节点 | ✅ | 见 `git log` |
+| CP11 | `graph.py` 完整条件边 + FakeLLM 整图测试 | ✅（并入 CP10 提交） |
 | CP12 | CLI、README、真实 API 端到端验证 | ⬜ | — |
 
-测试现状：**97 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
+测试现状：**103 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
 
 ## 3. 快速开始
 
