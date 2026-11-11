@@ -94,6 +94,10 @@ class ValueIndex:
                     continue
                 pks = table.primary_keys
                 pk = pks[0] if len(pks) == 1 else None
+                # 只有"表里唯一的名称列"才代表实体本身（city_name），
+                # region_name 这类分组属性即使在小样本里唯一，也应直接等值过滤
+                name_cols = [c.name for c in table.columns
+                             if c.name.lower().endswith(("name", "名称"))]
                 for col in table.columns:
                     if col.name in pks:
                         continue
@@ -103,10 +107,12 @@ class ValueIndex:
                         lower = col.name.lower()
                         if col.foreign_key or lower.endswith(("_code", "_id")):
                             continue
+                        prefer_pk = (pk is not None and len(name_cols) == 1
+                                     and col.name == name_cols[0])
                         key_type = (table.column(pk).simple_type
-                                    if pk else col.simple_type)
+                                    if prefer_pk else col.simple_type)
                         entries.extend(cls._text_column_entries(
-                            con, table, col, pk, key_type,
+                            con, table, col, pk, key_type, prefer_pk,
                             max_distinct, limit))
                     for number, label in _ENUM_PAIR.findall(col.comment or ""):
                         entries.append(ValueEntry(
@@ -119,15 +125,15 @@ class ValueIndex:
 
     @staticmethod
     def _text_column_entries(con, table, column_info, pk: str | None,
-                             key_type: str, max_distinct: int,
-                             limit: int) -> list[ValueEntry]:
+                             key_type: str, prefer_pk: bool,
+                             max_distinct: int, limit: int) -> list[ValueEntry]:
         table, column = table.name, column_info.name
         total, distinct = _fetch(
             con, f"SELECT COUNT({_q(column)}), COUNT(DISTINCT {_q(column)}) "
                  f"FROM {_q(table)}")[0]
         if not distinct or distinct > max_distinct:
             return []
-        if pk and pk != column and distinct == total:
+        if prefer_pk and pk and pk != column and distinct == total:
             # 值唯一：映射到主键编码（如 上海 -> city_code='021'）
             rows = _fetch(con, f"SELECT {_q(column)}, CAST({_q(pk)} AS VARCHAR) "
                                f"FROM {_q(table)} WHERE {_q(column)} IS NOT NULL "

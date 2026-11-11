@@ -44,7 +44,7 @@ class Text2SQLState(TypedDict, total=False):
     # ---- Router ----
     db_id: str
     dialect: str
-    dialect_rules: list[str]
+    dialect_rules: str          # 方言补丁全文（Markdown）
 
     # ---- Analyzer：检索与知识 ----
     rewritten_query: str
