@@ -62,7 +62,9 @@ class BGEEmbedder:
         model = SentenceTransformer(self.model_name, device=device)
         model.max_seq_length = self.max_length
         self._model = model
-        self.dim = int(model.get_sentence_embedding_dimension())
+        get_dim = (getattr(model, "get_embedding_dimension", None)
+                   or model.get_sentence_embedding_dimension)
+        self.dim = int(get_dim())
         return model
 
     def encode(self, texts: Sequence[str]) -> np.ndarray:

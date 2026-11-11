@@ -25,14 +25,14 @@
 | CP4 | Schema 压缩 | ✅ | `72769d9` |
 | CP5 | 数据库沙盒（含安全加固） | ✅ | `4f96b23` / `3e08d15` |
 | CP6 | 检索基础件：embedder / BM25 / RRF | ✅ | `4ffc3ab` |
-| CP7 | 检索层：schema_retriever / value_index / business_kb / 路由索引 / build_index | ⬜ | — |
+| CP7 | 检索层：schema_retriever / value_index / business_kb / 路由索引 / build_index | ✅ | 见 `git log` |
 | CP8 | `state.py` + `prompts.py` | ⬜ | — |
 | CP9 | Router + Analyzer 节点 | ⬜ | — |
 | CP10 | Coder + Executor + Evaluator 节点 | ⬜ | — |
 | CP11 | `graph.py` + FakeLLM 整图测试 | ⬜ | — |
 | CP12 | CLI、README、真实 API 端到端验证 | ⬜ | — |
 
-测试现状：**66 passed**（全部离线，不调用真实 LLM）。
+测试现状：**78 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
 
 ## 3. 快速开始
 
@@ -52,6 +52,24 @@ Linux / macOS 把 `.venv/Scripts/python` 换成 `.venv/bin/python`。
 - `data/sales.sqlite`：电商销售域，9 张核心表 + 20 张噪声表
 - `data/logs.duckdb`：APP 埋点域，2 张表
 - `data/schema/*.json`：表/字段中文注释 sidecar
+
+### 本地向量模型（BGE-M3）
+
+```bash
+# CUDA 12.6 版 PyTorch（RTX 4060 可用；纯 CPU 可去掉 --index-url）
+.venv/Scripts/python -m pip install torch --index-url https://download.pytorch.org/whl/cu126
+.venv/Scripts/python -m pip install sentence-transformers
+
+# 经 hf-mirror 下载模型（约 2.3GB；该仓库权重是 pytorch_model.bin，没有 safetensors）
+HF_ENDPOINT=https://hf-mirror.com .venv/Scripts/python -c "from huggingface_hub import snapshot_download; snapshot_download('BAAI/bge-m3', local_dir='models/bge-m3', allow_patterns=['*.json','*.bin','*.txt','*.model','*.spm'])"
+
+# 在 .env 中指向本地模型，避免每次联网解析
+# EMBEDDING_BACKEND=bge
+# EMBEDDING_MODEL=D:/study/text2sql/models/bge-m3
+
+# 构建检索索引（表/列/值/业务知识/库路由）
+.venv/Scripts/python scripts/build_index.py
+```
 
 ## 4. 目录与模块职责
 
@@ -167,14 +185,15 @@ emb.encode(["文本"]).shape              # (n, dim)，已 L2 归一
 
 - **沙盒不是真隔离**：与主程序同进程；SQLite 侧没有内存硬限；能读当前库的全部表和列（无列级脱敏）；执行的是主库文件。生产部署需要：只读备库 + 独立只读账号 + 容器内执行 + 列级权限。
 - **演示数据是模拟的**：固定种子可复现，但不代表真实业务分布；"爆款"等问题的数量级很小。
-- **本地向量模型依赖尚未安装**：`sentence-transformers` / `faiss-cpu` 在可选依赖 `local-embedding` 中，torch + 模型约 3～4GB。CP7 建索引前必须决定：本机 BGE-M3，还是 `EMBEDDING_BACKEND=api`。
+- **本地向量模型**：已安装 torch 2.14.1+cu126 与 sentence-transformers 6.2，BGE-M3 权重在 `models/bge-m3`（2.2GB，不入库），`.env` 指向该路径。同进程首次加载约 70 秒，编码本身很快。未使用 FAISS，向量检索为 numpy 矩阵乘（千级文本足够）。
 - **模型型号未定**：`ANALYZER_MODEL` / `CODER_MODEL` 还是占位值，需要按实际可用的 DashScope 型号填写。
 - **日期敏感**：数据截止 2026-11-07；"最近 30 天"等口径随系统日期漂移，复现实验时用 `TODAY=2026-11-08` 固定。
 
 ## 10. 下一步（CP7–CP12）
 
-- **CP7 检索层**：`business_kb.py`（Markdown 分块 + FAISS）、`value_index.py`（维度枚举值倒排 + 模糊匹配）、`schema_retriever.py`（表级 dense+BM25 → RRF → Top10；列级打分 → 每表 Top-N、全局约 30；输出 `dict[表, list[列]]` 供 `compress_schema`）、`db_router_index.py`、`scripts/build_index.py`（索引落盘 `data/index/`）。
 - **CP8**：`state.py`（含 trace、attempts、candidates）、`prompts.py`（改写 / 规划 / 生成 / 修复 / 判优；中文）。
+
+> CP7 实现说明：表级 向量 + BM25 → RRF → 默认 Top5；列级同样 RRF，每表 Top4、全局 30；`search(..., scope=描述符的 tables)` 把召回限制在业务域内。值检索把"唯一值"映射到主键编码，非唯一值直接等值过滤。Analyzer 在 CP9 需要把值映射/业务知识引用到的表补进 seeds（例如"华东"映射到 `dim_region`，而它可能没进 Top5）。
 - **CP9**：Router + Analyzer 节点。
 - **CP10**：Coder（3 候选并发）、Executor（调沙盒 + 未知列放宽 schema）、Evaluator（结果归一化、多数投票、LLM 判优）。
 - **CP11**：LangGraph 组装；FakeLLM 覆盖"首次成功 / 第 3 轮修复成功 / 全部失败"三条路径。
@@ -183,7 +202,7 @@ emb.encode(["文本"]).shape              # (n, dim)，已 L2 归一
 ## 11. 待决定事项
 
 1. DashScope 上 Analyzer / Coder 的具体模型型号。
-2. 向量模型：本地 BGE-M3 还是 API embedding。
+2. 向量模型已定为本地 BGE-M3。
 3. GitHub 仓库可见性（建议私有）。
 
 ## 12. 踩坑记录（Windows / 当前依赖版本）
