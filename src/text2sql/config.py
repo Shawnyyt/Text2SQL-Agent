@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     embedding_api_base_url: str | None = None
     embedding_api_key: str | None = None
 
+    # ---- 检索参数 ----
+    retrieval_top_tables: int = 5
+    retrieval_cols_per_table: int = 4
+    retrieval_max_cols: int = 30
+    retrieval_business_kb_top_k: int = 3
+
     # ---- 业务流程 ----
     # 首次生成之后最多修复几轮（共识 Q9：首次 + 最多 3 轮修复）
     max_repair_rounds: int = 3

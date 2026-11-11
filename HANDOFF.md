@@ -26,13 +26,13 @@
 | CP5 | 数据库沙盒（含安全加固） | ✅ | `4f96b23` / `3e08d15` |
 | CP6 | 检索基础件：embedder / BM25 / RRF | ✅ | `4ffc3ab` |
 | CP7 | 检索层：schema_retriever / value_index / business_kb / 路由索引 / build_index | ✅ | 见 `git log` |
-| CP8 | `state.py` + `prompts.py` | ⬜ | — |
+| CP8 | `state.py` + `prompts.py` | ✅ | 见 `git log` |
 | CP9 | Router + Analyzer 节点 | ⬜ | — |
 | CP10 | Coder + Executor + Evaluator 节点 | ⬜ | — |
 | CP11 | `graph.py` + FakeLLM 整图测试 | ⬜ | — |
 | CP12 | CLI、README、真实 API 端到端验证 | ⬜ | — |
 
-测试现状：**78 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
+测试现状：**92 passed**（全部离线，不调用真实 LLM）。检索索引已用本地 BGE-M3 实际构建（`data/index/`，约 3 秒编码 + 70 秒模型加载）。
 
 ## 3. 快速开始
 
@@ -191,10 +191,8 @@ emb.encode(["文本"]).shape              # (n, dim)，已 L2 归一
 
 ## 10. 下一步（CP7–CP12）
 
-- **CP8**：`state.py`（含 trace、attempts、candidates）、`prompts.py`（改写 / 规划 / 生成 / 修复 / 判优；中文）。
-
 > CP7 实现说明：表级 向量 + BM25 → RRF → 默认 Top5；列级同样 RRF，每表 Top4、全局 30；`search(..., scope=描述符的 tables)` 把召回限制在业务域内。值检索把"唯一值"映射到主键编码，非唯一值直接等值过滤。Analyzer 在 CP9 需要把值映射/业务知识引用到的表补进 seeds（例如"华东"映射到 `dim_region`，而它可能没进 Top5）。
-- **CP9**：Router + Analyzer 节点。
+- **CP9**：Router + Analyzer 节点（改写/实体抽取/字段扩展 → 表列召回 → 值映射补表 → 压缩 → 规划）。检索参数已放入 Settings：`RETRIEVAL_TOP_TABLES` / `RETRIEVAL_COLS_PER_TABLE` / `RETRIEVAL_MAX_COLS` / `RETRIEVAL_BUSINESS_KB_TOP_K`。
 - **CP10**：Coder（3 候选并发）、Executor（调沙盒 + 未知列放宽 schema）、Evaluator（结果归一化、多数投票、LLM 判优）。
 - **CP11**：LangGraph 组装；FakeLLM 覆盖"首次成功 / 第 3 轮修复成功 / 全部失败"三条路径。
 - **CP12**：CLI（rich 展示每一步）、README、真实 API 端到端验证（报告生成、数据探查、指标归因等场景）。
